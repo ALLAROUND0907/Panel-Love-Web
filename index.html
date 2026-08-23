@@ -1,0 +1,852 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>สร้างเว็บไซต์บอกรักคนที่เรารัก</title>
+    <link href="https://fonts.googleapis.com/css2?family=Charm:wght@700&family=Kanit:wght@300;400;600&family=Mali:wght@400;600;700&family=Prompt:wght@300;400;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+
+    <style>
+        :root {
+            --primary: #ff4757;
+            --primary-glow: rgba(255, 71, 87, 0.4);
+            --bg-gradient: radial-gradient(circle at top left, #1e1b4b, #0f172a, #31102f);
+            --glass: rgba(255, 255, 255, 0.08);
+            --glass-border: rgba(255, 255, 255, 0.18);
+            --app-font: 'Prompt', sans-serif;
+            
+            --glass-card-bg: rgba(255, 255, 255, 0.65);
+            --glass-card-border: rgba(255, 255, 255, 0.9);
+            --dest-bg: linear-gradient(135deg, #ff9a9e 0%, #fecfef 50%, #a1c4fd 100%);
+        }
+
+        .theme-pink { --dest-bg: linear-gradient(135deg, #ff758c 0%, #ff7eb3 100%); }
+        .theme-galaxy { --dest-bg: radial-gradient(circle, #1a103c 0%, #09090e 100%); --glass-card-bg: rgba(20, 15, 35, 0.75); --glass-card-border: rgba(255, 255, 255, 0.2); }
+        .theme-dark { --dest-bg: linear-gradient(135deg, #0f172a 0%, #1e293b 100%); --glass-card-bg: rgba(15, 23, 42, 0.8); --glass-card-border: rgba(255, 255, 255, 0.15); }
+        .theme-warm { --dest-bg: linear-gradient(135deg, #451a03 0%, #78350f 50%, #92400e 100%); --glass-card-bg: rgba(255, 248, 240, 0.85); }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: var(--app-font); }
+
+        body {
+            background: var(--bg-gradient);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 10px;
+            color: #fff;
+            transition: all 0.5s ease;
+            overflow-x: hidden;
+        }
+
+        body.dest-mode {
+            background: var(--dest-bg);
+            color: #2c2c2c;
+        }
+
+        .main-container {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 15px;
+            width: 100%;
+            max-width: 960px;
+        }
+
+        @media (min-width: 850px) {
+            .main-container { grid-template-columns: 1fr 340px; align-items: center; }
+        }
+
+        .card-admin {
+            background: var(--glass);
+            backdrop-filter: blur(25px);
+            -webkit-backdrop-filter: blur(25px);
+            border: 1px solid var(--glass-border);
+            padding: 16px 20px;
+            border-radius: 20px;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.4);
+        }
+
+        .pkg-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-bottom: 10px; }
+        .pkg-card {
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.15);
+            border-radius: 12px;
+            padding: 6px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        .pkg-card.active { 
+            background: rgba(255, 71, 87, 0.2); 
+            border-color: var(--primary); 
+            box-shadow: 0 0 12px var(--primary-glow); 
+        }
+        .pkg-badge { font-size: 0.6rem; padding: 1px 4px; border-radius: 4px; background: rgba(255,255,255,0.15); margin-top: 2px; display: inline-block; }
+
+        .input-group { text-align: left; margin-bottom: 8px; }
+        .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+        .grid-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; }
+        label { font-size: 0.72rem; font-weight: 600; color: #e2e8f0; margin-left: 2px; display: block; margin-bottom: 2px; }
+        
+        input, textarea, select {
+            width: 100%; padding: 6px 10px; background: rgba(255, 255, 255, 0.08);
+            border: 1px solid rgba(255, 255, 255, 0.18); border-radius: 10px;
+            outline: none; font-size: 0.78rem; color: #fff; transition: all 0.2s;
+        }
+        input:focus, textarea:focus, select:focus { border-color: var(--primary); }
+        input:disabled, select:disabled, textarea:disabled { opacity: 0.3; cursor: not-allowed; }
+        select option { background: #0f172a; color: #fff; }
+
+        .section-header {
+            font-size: 0.75rem; font-weight: 700; color: #ff758c; margin: 8px 0 6px;
+            text-align: left; border-bottom: 1px solid rgba(255,255,255,0.12); padding-bottom: 2px;
+            display: flex; align-items: center; gap: 6px;
+        }
+
+        .preview-pane {
+            background: rgba(0, 0, 0, 0.4);
+            border: 1px solid var(--glass-border); border-radius: 28px; padding: 10px;
+        }
+        .phone-screen {
+            background: var(--bg-gradient); border-radius: 20px; padding: 15px 12px;
+            min-height: 440px; display: flex; flex-direction: column; align-items: center;
+            justify-content: center; position: relative; overflow: hidden; border: 1px solid rgba(255,255,255,0.1);
+        }
+
+        .btn-action {
+            width: 100%; padding: 10px; background: linear-gradient(135deg, #ff4757 0%, #ff6b81 100%);
+            color: white; border: none; border-radius: 12px; font-size: 0.85rem;
+            font-weight: 700; cursor: pointer; margin-top: 8px; transition: all 0.2s;
+            display: flex; align-items: center; justify-content: center; gap: 6px;
+        }
+        .btn-action:hover { filter: brightness(1.1); }
+        .btn-secondary { background: linear-gradient(135deg, #6366f1 0%, #4f46e5 100%); }
+
+        /* ===== USER DESTINATION WEBSITE ===== */
+        .heart-bg { position: fixed; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; z-index: 1; display: none; }
+        .floating-heart { position: absolute; bottom: -50px; animation: floatUp 5s linear infinite; opacity: 0.8; }
+        @keyframes floatUp { 0% { transform: translateY(0) scale(0.8) rotate(0deg); opacity: 1; } 100% { transform: translateY(-105vh) scale(1.2) rotate(360deg); opacity: 0; } }
+
+        .dest-container { display: none; position: relative; z-index: 10; width: 100%; max-width: 360px; margin: 0 auto; }
+        .dest-card {
+            display: none; background: var(--glass-card-bg); backdrop-filter: blur(16px);
+            border: 2px solid var(--glass-card-border); border-radius: 24px; padding: 22px 18px; text-align: center;
+            box-shadow: 0 15px 35px rgba(255, 105, 135, 0.25); animation: popIn 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
+            position: relative;
+        }
+        .dest-card.active { display: block; }
+        @keyframes popIn { 0% { opacity: 0; transform: scale(0.8) translateY(20px); } 100% { opacity: 1; transform: scale(1) translateY(0); } }
+
+        .icon-header { font-size: 3rem; margin-bottom: 6px; display: inline-block; }
+        .pulse { animation: pulse 1.2s infinite alternate; }
+        @keyframes pulse { 0% { transform: scale(1); } 100% { transform: scale(1.2); } }
+
+        .dest-card h2 { color: #2c2c2c; font-size: 1.25rem; font-weight: 700; margin-bottom: 4px; }
+        .dest-card p.subtitle { color: #555; font-size: 0.82rem; margin-bottom: 14px; }
+
+        .dest-input-group input {
+            width: 100%; padding: 10px; border-radius: 12px; border: 2px solid rgba(255, 255, 255, 0.9);
+            background: rgba(255, 255, 255, 0.8); font-size: 0.9rem; text-align: center; outline: none; margin-bottom: 8px; color: #2c2c2c;
+        }
+
+        .btn-dest-primary {
+            width: 100%; padding: 10px; border: none; border-radius: 12px; background: var(--primary);
+            color: white; font-size: 0.9rem; font-weight: 600; cursor: pointer; transition: all 0.2s;
+        }
+
+        .error-msg { color: #ff3838; font-size: 0.75rem; margin-top: 6px; font-weight: 600; }
+        .btn-group { display: flex; flex-direction: column; gap: 8px; min-height: 90px; position: relative; }
+        .btn-no { background: #a4b0be; }
+
+        .photo-frame { width: 100%; height: 160px; border-radius: 16px; overflow: hidden; margin: 10px 0; border: 3px solid #ffffff; }
+        .photo-frame img { width: 100%; height: 100%; object-fit: cover; }
+
+        .love-text { font-size: 0.82rem; color: #444; line-height: 1.4; margin-bottom: 10px; word-break: break-word; }
+
+        .counter-card { background: rgba(255, 255, 255, 0.85); padding: 8px; border-radius: 12px; border: 1.5px dashed var(--primary); }
+        .counter-title { font-size: 0.75rem; color: #666; }
+        .days-number { font-size: 1.3rem; font-weight: 700; color: var(--primary); }
+
+        .nav-back-btn {
+            position: absolute; top: -30px; left: 0; background: rgba(0,0,0,0.4); border: 1px solid rgba(255,255,255,0.3);
+            color: white; padding: 2px 10px; border-radius: 8px; font-size: 0.7rem; cursor: pointer;
+        }
+
+        /* ===== MODAL PAYMENT ===== */
+        .modal-overlay {
+            display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.85); backdrop-filter: blur(10px); z-index: 999;
+            justify-content: center; align-items: center; padding: 15px;
+        }
+        .modal-card {
+            background: #0f172a; border: 1px solid var(--glass-border); border-radius: 20px;
+            padding: 18px; width: 100%; max-width: 360px; text-align: center;
+            max-height: 90vh; overflow-y: auto;
+        }
+        .qr-box { background: white; padding: 8px; border-radius: 14px; border: 2px dashed #ff4757; margin: 8px 0; width: 100%; }
+        .qr-box img { width: 120px; height: 120px; object-fit: contain; }
+        .price { font-size: 1.25rem; font-weight: 700; color: #ff4757; }
+        
+        .result-box { 
+            background: rgba(255,255,255,0.08); 
+            padding: 8px; 
+            border-radius: 8px; 
+            word-break: break-all; 
+            font-size: 0.7rem; 
+            margin: 8px 0; 
+            color: #cbd5e1;
+            max-height: 80px; 
+            overflow-y: auto; 
+            border: 1px solid rgba(255, 71, 87, 0.3);
+        }
+
+        .admin-footer {
+            margin-top: 15px;
+            padding-top: 10px;
+            border-top: 1px solid rgba(255, 255, 255, 0.1);
+            text-align: center;
+            font-size: 0.68rem;
+            color: rgba(255, 255, 255, 0.6);
+        }
+    </style>
+</head>
+<body>
+
+<div class="heart-bg" id="heartContainer"></div>
+
+<!-- PAGE 1: CONFIG MENU PANEL -->
+<div class="main-container" id="menuPanel">
+    <div class="card-admin">
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
+            <h2 style="color:var(--primary); font-family:'Mali', cursive; font-size:1.25rem;">สร้างเว็บไซต์บอกรักคนที่เรารัก</h2>
+            <div id="devInfoText"></div>
+        </div>
+
+        <div class="pkg-grid">
+            <div class="pkg-card active" id="pkg-basic" onclick="selectPackage('basic')">
+                <div style="font-size:0.75rem; font-weight:700;">Basic</div>
+                <div style="color:#ff758c; font-weight:700; font-size:0.8rem;" id="pkgPriceBasic">9 ฿</div>
+                <div class="pkg-badge">เริ่มต้น</div>
+            </div>
+            <div class="pkg-card" id="pkg-pro" onclick="selectPackage('pro')">
+                <div style="font-size:0.75rem; font-weight:700;">Pro ⭐</div>
+                <div style="color:#ff758c; font-weight:700; font-size:0.8rem;" id="pkgPricePro">19 ฿</div>
+                <div class="pkg-badge">แต่งสี/รูป</div>
+            </div>
+            <div class="pkg-card" id="pkg-vip" onclick="selectPackage('vip')">
+                <div style="font-size:0.75rem; font-weight:700;">VIP 👑</div>
+                <div style="color:#ff758c; font-weight:700; font-size:0.8rem;" id="pkgPriceVip">29 ฿</div>
+                <div class="pkg-badge">ปรับได้ทุกอย่าง</div>
+            </div>
+        </div>
+
+        <div class="section-header"><i class="fa-solid fa-paintbrush"></i> 1. ตกแต่งธีม / สติกเกอร์ / ฟอนต์ /เอฟเฟกต์พลุ</div>
+        <div class="grid-2">
+            <div class="input-group">
+                <label>สีธีม <span style="color:#ff758c;">(Pro)</span></label>
+                <select id="themeSelect" onchange="updateLivePreview()" disabled>
+                    <option value="default">💖 โรแมนติก</option>
+                    <option value="pink">🌸 ชมพูพาสเทล</option>
+                    <option value="galaxy">🌌 อวกาศ</option>
+                    <option value="dark">🖤 มินิมอล</option>
+                    <option value="warm">✨ อบอุ่น</option>
+                </select>
+            </div>
+            <div class="input-group">
+                <label>สติกเกอร์ <span style="color:#ff758c;">(Pro)</span></label>
+                <select id="stickerSelect" onchange="updateLivePreview()" disabled>
+                    <option value="🔒,💖">🔒 / 💖 หัวใจ</option>
+                    <option value="🧸,🐻">🧸 / 🐻 หมีน้อย</option>
+                    <option value="💌,✨">💌 / ✨ จดหมาย</option>
+                    <option value="🐱,😻">🐱 / 😻 แมวเหมียว</option>
+                </select>
+            </div>
+        </div>
+
+        <div class="grid-2">
+            <div class="input-group">
+                <label>ฟอนต์ <span style="color:#ff758c;">(VIP)</span></label>
+                <select id="fontSelect" onchange="updateLivePreview()" disabled>
+                    <option value="'Mali', sans-serif">Mali</option>
+                    <option value="'Prompt', sans-serif">Prompt</option>
+                    <option value="'Charm', cursive">Charm</option>
+                    <option value="'Kanit', sans-serif">Kanit</option>
+                </select>
+            </div>
+            <div class="input-group">
+                <label>เอฟเฟกต์พลุ <span style="color:#ff758c;">(VIP เท่านั้น)</span></label>
+                <select id="effectSelect" onchange="updateLivePreview()" disabled>
+                    <option value="hearts">💖 หัวใจ</option>
+                    <option value="confetti">🎉 พลุสายรุ้ง</option>
+                    <option value="stars">⭐ ละอองดาว</option>
+                </select>
+            </div>
+        </div>
+
+        <div class="section-header"><i class="fa-solid fa-pen-to-square"></i> 2. ข้อความ รูปภาพ และ รหัสผ่าน</div>
+        <div class="grid-2">
+            <div class="input-group">
+                <label>รหัสผ่านเข้าเว็บ</label>
+                <input type="text" id="pass" placeholder="เช่น 1234">
+            </div>
+            <div class="input-group">
+                <label>วันเริ่มคบกัน</label>
+                <input type="date" id="date" onchange="updateLivePreview()">
+            </div>
+        </div>
+
+        <div class="grid-2">
+            <div class="input-group">
+                <label>หัวข้อใหญ่หน้าเว็บ</label>
+                <input type="text" id="customTitle" placeholder="เช่น เย้ๆ รักเธอเหมือนกันนะ" oninput="updateLivePreview()">
+            </div>
+            <div class="input-group">
+                <label>อัปโหลดรูปภาพ <span style="color:#ff758c;">(Pro)</span></label>
+                <input type="file" id="imageFileInput" accept="image/*" disabled onchange="handleImageUpload(event)">
+            </div>
+        </div>
+
+        <div class="input-group">
+            <label>ข้อความบอกรักหลัก</label>
+            <input type="text" id="msg" placeholder="พิมพ์ข้อความบอกรักของคุณที่นี่..." oninput="updateLivePreview()">
+        </div>
+
+        <div class="section-header"><i class="fa-solid fa-gamepad"></i> 3. ปรับแต่งปุ่มวัดใจ</div>
+        <div class="grid-3">
+            <div class="input-group">
+                <label>คำถามวัดใจ <span style="color:#ff758c;">(Pro)</span></label>
+                <input type="text" id="askQuestion" placeholder="เธอรักเค้ามั้ย" disabled oninput="updateLivePreview()">
+            </div>
+            <div class="input-group">
+                <label>ข้อความปุ่มผ่าน <span style="color:#ff758c;">(Pro)</span></label>
+                <input type="text" id="btnYesText" placeholder="รักที่สุด 💕" disabled oninput="updateLivePreview()">
+            </div>
+            <div class="input-group">
+                <label>ข้อความปุ่มหนี <span style="color:#ff758c;">(Pro)</span></label>
+                <input type="text" id="btnNoText" placeholder="ไม่รัก 😭" disabled oninput="updateLivePreview()">
+            </div>
+        </div>
+
+        <div class="grid-2" style="margin-top:4px;">
+            <button class="btn-action" onclick="openPaymentModal()"><i class="fa-solid fa-qrcode"></i> ชำระเงิน & รับลิงก์ ✨</button>
+            <button class="btn-action btn-secondary" onclick="previewDirectly()"><i class="fa-solid fa-eye"></i> ทดลองดูตัวอย่าง ➔</button>
+        </div>
+
+        <div class="admin-footer" id="footerCredit"></div>
+    </div>
+
+    <!-- LIVE PREVIEW PANE -->
+    <div class="preview-pane">
+        <div class="phone-screen" id="previewContainer">
+            <div style="position:absolute; top:8px; left:50%; transform:translateX(-50%); background:rgba(0,0,0,0.6); color:#ff758c; padding:2px 10px; border-radius:10px; font-size:0.6rem; font-weight:600; border:1px solid rgba(255,255,255,0.1);" id="pkgBadgeTag">BASIC PLAN (9฿)</div>
+            
+            <h3 id="prevTitle" style="font-size:0.85rem; margin-top:14px; color:var(--primary);">หัวข้อตัวอย่าง</h3>
+            <img id="prevImg" src="" style="width:100%; height:110px; border-radius:12px; object-fit:cover; margin:6px 0; border:1px solid rgba(255,255,255,0.25);">
+            <p id="prevMsg" style="font-size:0.68rem; text-align:center; color:#e2e8f0; line-height:1.2;">ข้อความบอกรักตัวอย่างของคุณจะแสดงที่นี่ ❤️</p>
+
+            <div style="margin-top:8px; width:100%; background:rgba(255,255,255,0.05); padding:6px; border-radius:10px;">
+                <p id="prevQuestion" style="font-size:0.65rem; font-weight:600;">คำถามตัวอย่าง 🥺</p>
+                <div style="display:flex; flex-direction:column; gap:3px; margin-top:4px;">
+                    <span id="prevBtnYes" style="background:#ff4757; font-size:0.6rem; padding:3px 6px; border-radius:5px; font-weight:600; text-align:center;">ปุ่มตกลง 💕</span>
+                    <span id="prevBtnNo" style="background:#a4b0be; font-size:0.6rem; padding:3px 6px; border-radius:5px; font-weight:600; text-align:center;">ปุ่มปฏิเสธ 😭</span>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- PAGE 2: USER DESTINATION WEBSITE -->
+<div class="dest-container" id="userWeb">
+    <button class="nav-back-btn" onclick="backToMenu()" id="btnBackAdmin"><i class="fa-solid fa-arrow-left"></i> กลับแผงเมนู</button>
+    
+    <div class="dest-card active" id="cardLogin">
+        <div class="icon-header" id="loginSticker">🔒</div>
+        <h2>เค้ามีอะไรจะบอก</h2>
+        <p class="subtitle">กรุณาใส่รหัสผ่าน</p>
+        
+        <div class="dest-input-group">
+            <input type="password" id="passcode" placeholder="ใส่รหัสผ่าน..." maxlength="15">
+            <button class="btn-dest-primary" onclick="checkPassword()">กดเพื่อยืนยัน ✅️</button>
+        </div>
+        <p id="errorMsg" class="error-msg"></p>
+    </div>
+
+    <div class="dest-card" id="cardQuestion">
+        <div class="icon-header pulse" id="questSticker">💖</div>
+        <h2>เค้ามีอะไรจะถาม...</h2>
+        <p class="subtitle" id="destQuestion">เธอรักเค้ามั้ย </p>
+
+        <div class="btn-group" id="btnArea">
+            <button class="btn-dest-primary" id="destBtnYes" onclick="selectYes()">รักที่สุดในโลก</button>
+            <button class="btn-dest-primary btn-no" id="destBtnNo" onmouseover="dodgeButton()" onclick="dodgeButton()">ไม่รักกกกก😭</button>
+        </div>
+    </div>
+
+    <div class="dest-card" id="cardResult">
+        <div class="icon-header">❤️</div>
+        <h2 id="destTitle">หัวข้อตัวอย่าง</h2>
+        
+        <div class="photo-frame">
+            <img id="destImg" src="" alt="Memory Photo">
+        </div>
+
+        <p class="love-text" id="destMsg">ข้อความในใจ<br></p>
+
+        <div class="counter-card">
+            <span class="counter-title">เราอยู่ด้วยกันมา</span>
+            <div class="days-number"><span id="daysCount">0</span> วัน</div>
+        </div>
+    </div>
+</div>
+
+<!-- MODAL: PAYMENT -->
+<div class="modal-overlay" id="paymentModal">
+    <div class="modal-card">
+        <h2 style="color:var(--primary); font-family:'Mali', cursive; font-size:1.2rem;">💸 ชำระเงินค่าบริการ</h2>
+        <p style="font-size:0.75rem; color:#cbd5e1; margin-top:2px;">สแกน QR Code แล้วอัปโหลดสลิปเพื่อยืนยัน</p>
+
+        <div class="qr-box">
+            <p style="font-size: 0.7rem; color: #666;">ยอดชำระสุทธิ (<span id="modalPkgName">BASIC</span>)</p>
+            <div class="price" id="priceTag">9.00 บาท</div>
+            <img src="" id="qrImage" alt="PromptPay QR">
+        </div>
+
+        <div class="input-group">
+            <label>แนบรูปสลิปโอนเงิน</label>
+            <input type="file" id="slipInput" accept="image/*">
+        </div>
+
+        <div style="margin-top: 8px; font-size: 0.72rem; color: #cbd5e1;">
+            ติดปัญหาการใช้งาน ติดต่อผู้พัฒนาได้ที่:<br>
+            <a href="https://instagram.com/9_julyxz" target="_blank" style="color: #ff758c; font-weight: bold; text-decoration: none; display: inline-flex; align-items: center; gap: 4px; margin-top: 3px;">
+                <i class="fa-brands fa-instagram"></i> IG: @9_julyxz
+            </a>
+        </div>
+
+        <button class="btn-action" onclick="generateLinkDirectly()" id="btnSubmit">ยืนยันและรับลิงก์ ✨</button>
+
+        <div id="linkSuccessSection" style="display:none; margin-top:10px;">
+            <p style="font-size:0.75rem; color:#10b981; font-weight:600;">🎉 สร้างเว็บสำเร็จ! คัดลอกลิงก์ส่งให้แฟนได้เลย</p>
+            
+            <div class="result-box" id="linkResult"></div>
+            
+            <button class="btn-action" style="background:#10b981; margin-top:6px;" onclick="copyGeneratedLink()">
+                <i class="fa-solid fa-copy"></i> คัดลอกลิงก์เว็บบอกรัก
+            </button>
+            <button class="btn-action" style="background:#6366f1; margin-top:6px;" onclick="testWebFromModal()">
+                <i class="fa-solid fa-eye"></i> ทดลองเปิดดูเว็บทันที
+            </button>
+        </div>
+
+        <button onclick="closePaymentModal()" style="background:transparent; border:none; color:#a4b0be; margin-top:10px; font-size:0.75rem; cursor:pointer;">ปิดหน้าต่าง</button>
+    </div>
+</div>
+
+<script>
+    const CONFIG = {
+        payment: {
+            qrImageUrl: "https://cdn.discordapp.com/attachments/1378948047639281837/1540017257424494672/004999139087489_20260820_221556.jpg?ex=6a8b0f56&is=6a89bdd6&hm=2ab390162cd5ecaae080f93a32642f42a1e060962f7c19a8eb2e1cd44fbe35ba&",
+            packages: {
+                basic: { name: "BASIC", price: "9.00 บาท", shortPrice: "9 ฿" },
+                pro:   { name: "PRO ⭐", price: "19.00 บาท", shortPrice: "19 ฿" },
+                vip:   { name: "VIP 👑", price: "29.00 บาท", shortPrice: "29 ฿" }
+            }
+        },
+        developer: {
+            brandName: "Sorakrit Nonthawong M.5/1",
+            ig: "9_julyxz",
+            name: "Sorakrit"
+        },
+        defaults: {
+            pass: "1234",
+            date: "2026-01-01",
+            title: "หัวข้อความทรงจำ",
+            msg: "ข้อความบอกรักของคุณ...",
+            question: "เธอรักเค้ามั้ย 🥺",
+            btnYesText: "รักที่สุด 💕",
+            btnNoText: "ไม่รัก 😭",
+            imgUrl: "https://images.unsplash.com/photo-1518199266791-5375a83190b7?q=80&w=400"
+        }
+    };
+
+    let currentPkg = 'basic';
+    let activeConfig = {};
+    let uploadedImageBase64 = CONFIG.defaults.imgUrl;
+
+    window.onload = function() {
+        const devElem = document.getElementById('devInfoText');
+        if (devElem) {
+            devElem.innerHTML = `<a href="https://instagram.com/${CONFIG.developer.ig}" target="_blank" style="background: linear-gradient(45deg, #f09433, #bc1888, #e6683c); color: white; padding: 4px 10px; border-radius: 20px; text-decoration: none; font-size: 0.65rem; font-weight: bold; box-shadow: 0 0 10px rgba(225,48,108,0.5); display: inline-flex; align-items: center; gap: 4px;"><i class="fa-brands fa-instagram"></i> IG: @${CONFIG.developer.ig}</a>`;
+        }
+
+        const footerElem = document.getElementById('footerCredit');
+        if (footerElem) {
+            footerElem.innerHTML = `
+                <div style="background: rgba(255, 255, 255, 0.08); border: 1px solid rgba(255, 255, 255, 0.2); border-radius: 12px; padding: 10px; margin-top: 5px; display: inline-block; width: 100%;">
+                    <div style="font-size: 0.75rem; color: #fff; margin-bottom: 6px;">Powered by <strong>${CONFIG.developer.brandName}</strong></div>
+                    <a href="https://instagram.com/${CONFIG.developer.ig}" target="_blank" style="display: inline-flex; align-items: center; gap: 6px; background: linear-gradient(45deg, #405de6, #5851db, #833ab4, #c13584, #e1306c, #fd1d1d); color: white; padding: 6px 16px; border-radius: 50px; text-decoration: none; font-size: 0.8rem; font-weight: 700; box-shadow: 0 4px 15px rgba(225, 48, 108, 0.4); transition: transform 0.2s;">
+                        <i class="fa-brands fa-instagram" style="font-size: 1rem;"></i> Contact Developer: @${CONFIG.developer.ig}
+                    </a>
+                </div>
+            `;
+        }
+
+        document.getElementById('pkgPriceBasic').innerText = CONFIG.payment.packages.basic.shortPrice;
+        document.getElementById('pkgPricePro').innerText = CONFIG.payment.packages.pro.shortPrice;
+        document.getElementById('pkgPriceVip').innerText = CONFIG.payment.packages.vip.shortPrice;
+
+        selectPackage('basic');
+        
+        const urlParams = new URLSearchParams(window.location.search);
+        const dataParam = urlParams.get('data');
+
+        if (dataParam) {
+            try {
+                const decoded = JSON.parse(decodeURIComponent(dataParam));
+                activeConfig = decoded;
+                
+                document.getElementById('menuPanel').style.display = 'none';
+                document.getElementById('paymentModal').style.display = 'none';
+                document.getElementById('btnBackAdmin').style.display = 'none';
+                
+                loadUserWebsite(activeConfig);
+            } catch (e) {
+                alert('ลิงก์ไม่ถูกต้องหรือข้อมูลเสียหาย');
+            }
+        }
+    };
+
+    function selectPackage(pkg) {
+        currentPkg = pkg;
+        document.querySelectorAll('.pkg-card').forEach(c => c.classList.remove('active'));
+        document.getElementById('pkg-' + pkg).classList.add('active');
+
+        const themeSelect = document.getElementById('themeSelect');
+        const imageFileInput = document.getElementById('imageFileInput');
+        const askQuestion = document.getElementById('askQuestion');
+        const btnYesText = document.getElementById('btnYesText');
+        const btnNoText = document.getElementById('btnNoText');
+        const stickerSelect = document.getElementById('stickerSelect');
+        const fontSelect = document.getElementById('fontSelect');
+        const effectSelect = document.getElementById('effectSelect');
+        const badgeTag = document.getElementById('pkgBadgeTag');
+
+        const pkgInfo = CONFIG.payment.packages[pkg];
+
+        if (pkg === 'basic') {
+            themeSelect.disabled = true; imageFileInput.disabled = true; askQuestion.disabled = true;
+            btnYesText.disabled = true; btnNoText.disabled = true;
+            stickerSelect.disabled = true; fontSelect.disabled = true; effectSelect.disabled = true;
+
+            themeSelect.value = "default"; askQuestion.value = "";
+            btnYesText.value = ""; btnNoText.value = "";
+            stickerSelect.value = "🔒,💖"; fontSelect.value = "'Mali', sans-serif"; effectSelect.value = "hearts";
+
+            badgeTag.innerText = `${pkgInfo.name} PLAN (${pkgInfo.shortPrice})`;
+        } else if (pkg === 'pro') {
+            themeSelect.disabled = false; imageFileInput.disabled = false; askQuestion.disabled = false;
+            btnYesText.disabled = false; btnNoText.disabled = false;
+            stickerSelect.disabled = false;
+
+            fontSelect.disabled = true; effectSelect.disabled = true;
+            fontSelect.value = "'Mali', sans-serif"; effectSelect.value = "hearts";
+
+            badgeTag.innerText = `${pkgInfo.name} PLAN (${pkgInfo.shortPrice})`;
+        } else if (pkg === 'vip') {
+            themeSelect.disabled = false; imageFileInput.disabled = false; askQuestion.disabled = false;
+            btnYesText.disabled = false; btnNoText.disabled = false;
+            stickerSelect.disabled = false; fontSelect.disabled = false; effectSelect.disabled = false;
+
+            badgeTag.innerText = `${pkgInfo.name} PLAN (${pkgInfo.shortPrice})`;
+        }
+        updateLivePreview();
+    }
+
+    function handleImageUpload(event) {
+        const file = event.target.files[0];
+        if (file) {
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                uploadedImageBase64 = e.target.result;
+                updateLivePreview();
+            };
+            reader.readAsDataURL(file);
+        }
+    }
+
+    function updateLivePreview() {
+        const title = document.getElementById('customTitle').value || "หัวข้อตัวอย่าง";
+        const msg = document.getElementById('msg').value || "ข้อความบอกรักตัวอย่างของคุณจะแสดงที่นี่ ❤️";
+        const question = (currentPkg !== 'basic' && document.getElementById('askQuestion').value) ? document.getElementById('askQuestion').value : CONFIG.defaults.question;
+        const btnYesText = (currentPkg !== 'basic' && document.getElementById('btnYesText').value) ? document.getElementById('btnYesText').value : CONFIG.defaults.btnYesText;
+        const btnNoText = (currentPkg !== 'basic' && document.getElementById('btnNoText').value) ? document.getElementById('btnNoText').value : CONFIG.defaults.btnNoText;
+        
+        const font = document.getElementById('fontSelect').value;
+        const theme = document.getElementById('themeSelect').value;
+
+        document.getElementById('prevTitle').innerText = title;
+        document.getElementById('prevMsg').innerText = msg;
+        document.getElementById('prevQuestion').innerText = question;
+        document.getElementById('prevBtnYes').innerText = btnYesText;
+        document.getElementById('prevBtnNo').innerText = btnNoText;
+
+        if (currentPkg !== 'basic') {
+            document.getElementById('prevImg').src = uploadedImageBase64;
+        } else {
+            document.getElementById('prevImg').src = CONFIG.defaults.imgUrl;
+        }
+
+        const container = document.getElementById('previewContainer');
+
+        if (currentPkg === 'vip') {
+            container.style.fontFamily = font;
+        } else {
+            container.style.fontFamily = "'Prompt', sans-serif";
+        }
+
+        if (theme !== 'default' && (currentPkg === 'pro' || currentPkg === 'vip')) {
+            container.className = 'phone-screen theme-' + theme;
+        } else {
+            container.className = 'phone-screen';
+        }
+    }
+
+    function buildCurrentConfig() {
+        return {
+            pkg: currentPkg,
+            pass: document.getElementById('pass').value || CONFIG.defaults.pass,
+            title: document.getElementById('customTitle').value || CONFIG.defaults.title,
+            msg: document.getElementById('msg').value || CONFIG.defaults.msg,
+            question: (currentPkg !== 'basic' && document.getElementById('askQuestion').value) ? document.getElementById('askQuestion').value : CONFIG.defaults.question,
+            btnYesText: (currentPkg !== 'basic' && document.getElementById('btnYesText').value) ? document.getElementById('btnYesText').value : CONFIG.defaults.btnYesText,
+            btnNoText: (currentPkg !== 'basic' && document.getElementById('btnNoText').value) ? document.getElementById('btnNoText').value : CONFIG.defaults.btnNoText,
+            theme: (currentPkg !== 'basic') ? document.getElementById('themeSelect').value : 'default',
+            font: (currentPkg === 'vip') ? document.getElementById('fontSelect').value : "'Mali', sans-serif",
+            effect: (currentPkg === 'vip') ? document.getElementById('effectSelect').value : 'hearts',
+            stickers: (currentPkg !== 'basic') ? document.getElementById('stickerSelect').value : '🔒,💖',
+            date: document.getElementById('date').value || CONFIG.defaults.date,
+            img: (currentPkg !== 'basic') ? uploadedImageBase64 : CONFIG.defaults.imgUrl
+        };
+    }
+
+    function previewDirectly() {
+        activeConfig = buildCurrentConfig();
+        document.getElementById('menuPanel').style.display = 'none';
+        document.getElementById('btnBackAdmin').style.display = 'block';
+        loadUserWebsite(activeConfig);
+    }
+
+    function openPaymentModal() {
+        const pass = document.getElementById('pass').value;
+        const date = document.getElementById('date').value;
+        if (!pass || !date) {
+            alert('กรุณากรอกรหัสผ่านและวันที่เริ่มคบให้ครบถ้วนครับ');
+            return;
+        }
+
+        const pkgInfo = CONFIG.payment.packages[currentPkg];
+        document.getElementById('modalPkgName').innerText = pkgInfo.name;
+        document.getElementById('priceTag').innerText = pkgInfo.price;
+        document.getElementById('qrImage').src = CONFIG.payment.qrImageUrl;
+
+        document.getElementById('linkSuccessSection').style.display = 'none';
+        document.getElementById('btnSubmit').style.display = 'block';
+        document.getElementById('paymentModal').style.display = 'flex';
+    }
+
+    function closePaymentModal() { document.getElementById('paymentModal').style.display = 'none'; }
+
+    function generateLinkDirectly() {
+        const slipFile = document.getElementById('slipInput').files[0];
+        if (!slipFile) {
+            alert('กรุณาอัปโหลดรูปสลิปการโอนเงินก่อนครับ');
+            return;
+        }
+
+        activeConfig = buildCurrentConfig();
+        const jsonString = JSON.stringify(activeConfig);
+        const encodedData = encodeURIComponent(jsonString);
+
+        let baseURL = window.location.protocol.startsWith('http') 
+            ? window.location.origin + window.location.pathname 
+            : "https://yourdomain.com/"; 
+
+        const finalLink = `${baseURL}?data=${encodedData}`;
+
+        document.getElementById('btnSubmit').style.display = 'none';
+        document.getElementById('linkSuccessSection').style.display = 'block';
+        document.getElementById('linkResult').innerText = finalLink;
+    }
+
+    function copyGeneratedLink() {
+        const text = document.getElementById('linkResult').innerText;
+        
+        if (navigator.clipboard && window.isSecureContext) {
+            navigator.clipboard.writeText(text).then(() => {
+                alert('คัดลอกลิงก์บอกรักเรียบร้อยแล้ว! นำไปส่งให้คนที่คุณรักได้เลย');
+            }).catch(() => {
+                fallbackCopyText(text);
+            });
+        } else {
+            fallbackCopyText(text);
+        }
+    }
+
+    function fallbackCopyText(text) {
+        const textArea = document.createElement("textarea");
+        textArea.value = text;
+        document.body.appendChild(textArea);
+        textArea.focus();
+        textArea.select();
+        try {
+            document.execCommand('copy');
+            alert('คัดลอกลิงก์เรียบร้อยแล้ว!');
+        } catch (err) {
+            alert('ไม่สามารถคัดลอกได้อัตโนมัติ กรุณาคลุมดำข้อความแล้วกดคัดลอกด้วยตนเองครับ');
+        }
+        document.body.removeChild(textArea);
+    }
+
+    function testWebFromModal() {
+        closePaymentModal();
+        document.getElementById('menuPanel').style.display = 'none';
+        document.getElementById('btnBackAdmin').style.display = 'block';
+        loadUserWebsite(activeConfig);
+    }
+
+    function loadUserWebsite(config) {
+        document.body.classList.add('dest-mode');
+        document.getElementById('heartContainer').style.display = 'block';
+        document.getElementById('userWeb').style.display = 'block';
+
+        switchCard(null, 'cardLogin');
+        document.getElementById('passcode').value = '';
+        document.getElementById('errorMsg').innerText = '';
+
+        const btnNo = document.getElementById('destBtnNo');
+        btnNo.style.position = 'static';
+
+        document.getElementById('destTitle').innerText = config.title;
+        document.getElementById('destMsg').innerHTML = config.msg.replace(/\n/g, '<br>');
+        document.getElementById('destQuestion').innerText = config.question;
+        document.getElementById('destBtnYes').innerText = config.btnYesText;
+        document.getElementById('destBtnNo').innerText = config.btnNoText;
+        document.getElementById('destImg').src = config.img;
+
+        const stickers = (config.stickers || '🔒,💖').split(',');
+        document.getElementById('loginSticker').innerText = stickers[0] || '🔒';
+        document.getElementById('questSticker').innerText = stickers[1] || '💖';
+
+        if ((config.pkg === 'pro' || config.pkg === 'vip') && config.theme !== 'default') {
+            document.body.className = 'dest-mode theme-' + config.theme;
+        } else {
+            document.body.className = 'dest-mode';
+        }
+
+        if (config.pkg === 'vip') {
+            document.documentElement.style.setProperty('--app-font', config.font);
+        } else {
+            document.documentElement.style.setProperty('--app-font', "'Mali', 'Prompt', sans-serif");
+        }
+
+        calculateLoveDays(config.date);
+        createHeartParticles();
+    }
+
+    function checkPassword() {
+        const input = document.getElementById('passcode').value;
+        const errorMsg = document.getElementById('errorMsg');
+
+        if (input === activeConfig.pass) {
+            switchCard('cardLogin', 'cardQuestion');
+        } else {
+            errorMsg.innerText = "รหัสผ่านไม่ถูกต้อง ลองอีกทีนะ";
+            document.getElementById('passcode').value = '';
+        }
+    }
+
+    function switchCard(fromCardId, toCardId) {
+        if (fromCardId) {
+            document.getElementById(fromCardId).classList.remove('active');
+        } else {
+            document.querySelectorAll('.dest-card').forEach(c => c.classList.remove('active'));
+        }
+        document.getElementById(toCardId).classList.add('active');
+    }
+
+    function dodgeButton() {
+        const btn = document.getElementById('destBtnNo');
+        const padding = 20;
+        const maxX = window.innerWidth - btn.offsetWidth - padding;
+        const maxY = window.innerHeight - btn.offsetHeight - padding;
+
+        const randomX = Math.floor(Math.random() * (maxX - padding)) + padding;
+        const randomY = Math.floor(Math.random() * (maxY - padding)) + padding;
+
+        btn.style.position = 'fixed';
+        btn.style.left = `${randomX}px`;
+        btn.style.top = `${randomY}px`;
+        btn.style.zIndex = '99';
+    }
+
+    function selectYes() {
+        if (activeConfig.pkg === 'vip') {
+            if (activeConfig.effect === 'hearts') confetti({ particleCount: 70, scalar: 2, shapes: ['heart'] });
+            else if (activeConfig.effect === 'stars') confetti({ particleCount: 80, shapes: ['star'] });
+            else confetti({ particleCount: 80, spread: 80 });
+        } else {
+            confetti({ particleCount: 50, spread: 60 });
+        }
+
+        switchCard('cardQuestion', 'cardResult');
+    }
+
+    function calculateLoveDays(startDateStr) {
+        let startDate;
+        if (startDateStr && startDateStr.includes('-')) {
+            const parts = startDateStr.split('-');
+            startDate = new Date(parts[0], parts[1] - 1, parts[2]);
+        } else {
+            startDate = new Date(startDateStr || CONFIG.defaults.date);
+        }
+
+        const today = new Date();
+        const diffTime = Math.abs(today - startDate);
+        const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+        document.getElementById('daysCount').innerText = diffDays;
+    }
+
+    let heartInterval = null;
+    function createHeartParticles() {
+        if (heartInterval) clearInterval(heartInterval);
+        const container = document.getElementById('heartContainer');
+        container.innerHTML = '';
+        const icons = ['❤️', '💖', '🌸', '✨', '💕', '🧸'];
+
+        heartInterval = setInterval(() => {
+            if (document.getElementById('userWeb').style.display === 'none') return;
+            const heart = document.createElement('div');
+            heart.classList.add('floating-heart');
+            heart.innerText = icons[Math.floor(Math.random() * icons.length)];
+            heart.style.left = Math.random() * 100 + 'vw';
+            heart.style.fontSize = (Math.random() * 15 + 15) + 'px';
+            heart.style.animationDuration = (Math.random() * 3 + 3) + 's';
+
+            container.appendChild(heart);
+
+            setTimeout(() => { heart.remove(); }, 5500);
+        }, 350);
+    }
+
+    function backToMenu() {
+        document.body.className = '';
+        document.getElementById('heartContainer').style.display = 'none';
+        document.getElementById('userWeb').style.display = 'none';
+        document.getElementById('menuPanel').style.display = 'grid';
+    }
+</script>
+
+</body>
+</html>
